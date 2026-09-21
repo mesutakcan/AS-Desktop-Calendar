@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DesktopCalendar</RootNamespace>
+    <AssemblyName>AS Desktop Calendar</AssemblyName>
+    <Product>AS Desktop Calendar</Product>
+    <ApplicationIcon>icon1.ico</ApplicationIcon>
+    <!-- No console/main window: runs as a tray (NotifyIcon) app, see TrayApplicationContext. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+<ItemGroup>
+  <EmbeddedResource Include="icon1.ico" />
+</ItemGroup>
+
+</Project>
