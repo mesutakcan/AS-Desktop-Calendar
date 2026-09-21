@@ -1,0 +1,21 @@
+# Derleme çıktıları
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+*.exe
+*.dll
+*.pdb
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# Kullanıcıya özel / üretilen dosyalar
+*.tmp
+wallpaper.bmp
+
+# Diğer
+[Tt]est[Rr]esult*/
+*.log
