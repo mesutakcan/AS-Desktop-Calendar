@@ -1,5 +1,12 @@
 # AS Desktop Calendar
 
+[![Build](https://github.com/mesutakcan/AS-Desktop-Calendar/actions/workflows/build.yml/badge.svg)](https://github.com/mesutakcan/AS-Desktop-Calendar/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/mesutakcan/AS-Desktop-Calendar)](https://github.com/mesutakcan/AS-Desktop-Calendar/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/mesutakcan/AS-Desktop-Calendar/total)](https://github.com/mesutakcan/AS-Desktop-Calendar/releases)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-0078D4)](https://github.com/mesutakcan/AS-Desktop-Calendar/releases/latest)
+
 Masaüstünüzdeki duvar kağıdının üzerine güncel takvimi yerleştiren, sade ve
 kişiselleştirilebilir bir Windows uygulaması.
 
