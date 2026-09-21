@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        rid: [ win-x64, win-x86 ]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Publish (${{ matrix.rid }})
+      shell: pwsh
+      run: >
+        dotnet publish src/DesktopCalendar.csproj
+        -c Release
+        -r ${{ matrix.rid }}
+        --self-contained true
+        -p:PublishSingleFile=true
+        -p:IncludeNativeLibrariesForSelfExtract=true
+        -p:PublishReadyToRun=false
+        -p:DebugType=None
+        -o publish/${{ matrix.rid }}
+
+    - name: Rename output
+      shell: pwsh
+      run: |
+        $src = Get-ChildItem "publish/${{ matrix.rid }}" -Filter *.exe | Select-Object -First 1
+        if (-not $src) { throw "exe bulunamadi" }
+        Move-Item $src.FullName "publish/AS-Desktop-Calendar-${{ matrix.rid }}.exe"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AS-Desktop-Calendar-${{ matrix.rid }}
+        path: publish/AS-Desktop-Calendar-${{ matrix.rid }}.exe
+        if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: dist
+        merge-multiple: true
+
+    - name: Create checksums
+      run: |
+        cd dist
+        sha256sum *.exe > SHA256SUMS.txt
+        cat SHA256SUMS.txt
+
+    - name: Create GitHub release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/*.exe
+          dist/SHA256SUMS.txt
+        generate_release_notes: true
