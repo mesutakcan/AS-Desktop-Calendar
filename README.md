@@ -143,15 +143,16 @@ Doğum günü, ödeme günü, toplantı veya kişisel notlar ekleyebilirsiniz.
 Hatırlatıcılar takvim üzerinde işaretlenir ve ilgili gün geldiğinde uygulama
 içi bildirim penceresinde gösterilir (Windows Toast bildirimi kullanılmaz).
 Geçmişte kalan hatırlatıcılar "Kaçırılan hatırlatıcılar" başlığı altında ayrıca
-listelenir. Yıl boş bırakılırsa her yıl tekrarlanır.
+listelenir. Bildirim penceresinden bir hatırlatıcıyı tamamlandı olarak
+işaretleyebilir veya silebilirsiniz. Tamamlanma durumu kaydedilir; yılı boş
+bırakılan hatırlatıcılar her yıl yeniden etkinleşir.
 
 ![Ayarlar](docs/ss_ayarlar_6.png)
 
-> **Not:** Bir hatırlatıcının kapatıldığı veya tamamlandığı bilgisi saklanmaz.
-> Bu nedenle kaçırılan hatırlatıcılar, gün her değiştiğinde ve uygulama her
-> başlatıldığında yeniden listelenir. Listeyi temizlemek için ilgili kaydı
-> Ayarlar > Hatırlatıcılar bölümünden silin (**Geçmiş tarihleri sil** düğmesi yalnızca
-> yılı belirtilmiş, geçmiş tarihli kayıtları kaldırır).
+> **Not:** Kapatılan hatırlatıcılar tamamlanmış sayılmaz; yeniden açıldığında
+> tekrar gösterilebilir. Kaçırılan hatırlatıcıları listeden kaldırmak için
+> tamamlandı olarak işaretleyin veya silin. **Geçmiş tarihleri sil** düğmesi,
+> yalnızca yılı belirtilmiş geçmiş tarihli kayıtları kaldırır.
 
 ## Tatil / Hatırlatıcı CSV Formatı
 
@@ -161,13 +162,14 @@ Her iki dosya da `%LocalAppData%\AS Desktop Calendar\` klasöründe bulunur.
 Dosya formatı:
 
 ```
-Day,Month,Year,Label,Portion
-1,1,,Yılbaşı,Full
-15,7,,Demokrasi ve Millî Birlik Günü,Full
+Day,Month,Year,Label,Portion,CompletedYear
+1,1,,Yılbaşı,Full,
+15,7,,Demokrasi ve Millî Birlik Günü,Full,
 ```
 
 - **Year** sütunu boş bırakılırsa giriş her yıl tekrarlanır.
 - **Portion** değerleri: `Full` (tam gün) veya `Afternoon` (öğleden sonra).
+- **CompletedYear** hatırlatıcının tamamlandığı yılı belirtir; uygulama tarafından yönetilir. Tatillerde boş bırakılır.
 - Ayırıcı karakter (virgül, noktalı virgül veya sekme), Windows bölge ayarındaki liste ayırıcıya göre otomatik belirlenir ve dosyadan otomatik algılanır.
 - Dosyaları elle düzenliyorsanız **geçerli tarihler** girin (ör. yılı belirtilmiş `30,2,2026` gibi var olmayan bir tarih, hatırlatıcı denetimi sırasında hataya yol açabilir). Ayarlar penceresi geçersiz tarihleri kaydetmenize izin vermez; bu doğrulama doğrudan CSV düzenlemesinde uygulanmaz.
 - `29,2,` (yıl boş) girişi yalnızca artık yıllarda görünür ve tetiklenir.
@@ -225,8 +227,8 @@ Uygulama tüm verilerini `%LocalAppData%\AS Desktop Calendar\` altında saklar:
   ayarlar otomatik geri yüklenmez; gerekirse Windows'ta
   *Ayarlar > Kişiselleştirme > Arka plan* bölümünden duvar kağıdı uyumunu
   yeniden seçin.
-- **Kaçırılan hatırlatıcılar:** Kapatma/tamamlanma durumu saklanmadığı için
-  liste her gün yeniden gösterilir (bkz. [Hatırlatıcılar](#hatırlatıcılar)).
+- **Kaçırılan hatırlatıcılar:** Tamamlanana veya silinene kadar yeniden
+  gösterilebilir (bkz. [Hatırlatıcılar](#hatırlatıcılar)).
 - **Bildirimler:** Windows Toast bildirimi yoktur; hatırlatıcılar uygulama içi
   pencerede gösterilir.
 - **Performans:** Çok sayıda ay, yüksek çözünürlük ve büyük tatil/hatırlatıcı
@@ -262,6 +264,17 @@ dotnet publish src/DesktopCalendar.csproj -c Release -r win-x86 --self-contained
 Çıktı, `src/bin/Release/net8.0-windows/<win-x64 | win-x86>/publish/` klasöründe
 oluşur. Her iki sürüm de .NET çalışma zamanını içerdiği için (self-contained)
 boyutları büyüktür; kullanıcının ayrıca .NET kurmasına gerek kalmaz.
+
+## Tarihçe
+
+### 1.1.0 : 31/10/2026
+
+- Hatırlatıcı bildirim penceresine tamamlandı olarak işaretleme ve silme işlemleri eklendi.
+- Hatırlatıcıların tamamlanma durumu CSV dosyasında saklanır; yıllık tekrar eden hatırlatıcılar yeni yılda yeniden etkinleşir.
+
+### 1.0.0 : 21/09/2026
+
+- İlk sürüm
 
 ## Lisans
 
