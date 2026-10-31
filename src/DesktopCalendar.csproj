@@ -13,6 +13,7 @@
     <!-- No console/main window: runs as a tray (NotifyIcon) app, see TrayApplicationContext. -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <InvariantGlobalization>false</InvariantGlobalization>
+		<Version>1.1.0</Version>
   </PropertyGroup>
 
 <ItemGroup>

@@ -29,7 +29,7 @@ namespace DesktopCalendar;
 internal static class DateEntryStore
 {
     private static readonly char[] DelimiterCandidates = { ',', ';', '\t' };
-    private static readonly string[] Header = { "Day", "Month", "Year", "Label", "Portion" };
+    private static readonly string[] Header = { "Day", "Month", "Year", "Label", "Portion", "CompletedYear" };
     private static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
 
     public static List<DateEntry> Load(string filePath)
@@ -60,8 +60,11 @@ internal static class DateEntryStore
 
             string label = fields.Count > 3 ? fields[3] : "";
             string portion = fields.Count > 4 && fields[4].Length > 0 ? fields[4] : "Full";
+            int? completedYear = fields.Count > 5 && int.TryParse(fields[5], NumberStyles.Integer, CultureInfo.InvariantCulture, out int completed)
+                ? completed
+                : null;
 
-            result.Add(new DateEntry { Day = day, Month = month, Year = year, Label = label, Portion = portion });
+            result.Add(new DateEntry { Day = day, Month = month, Year = year, CompletedYear = completedYear, Label = label, Portion = portion });
         }
 
         return result;
@@ -83,6 +86,7 @@ internal static class DateEntryStore
                 e.Year?.ToString(CultureInfo.InvariantCulture) ?? "",
                 e.Label,
                 e.Portion,
+                e.CompletedYear?.ToString(CultureInfo.InvariantCulture) ?? "",
             };
             sb.AppendLine(string.Join(delimiter, fields.Select(f => EscapeCsvField(f, delimiter))));
         }

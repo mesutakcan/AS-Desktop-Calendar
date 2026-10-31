@@ -6,6 +6,7 @@ internal sealed class DateEntry
     public int Day { get; set; }
     public int Month { get; set; }
     public int? Year { get; set; }
+    public int? CompletedYear { get; set; }
     public string Label { get; set; } = "";
 
     /// <summary>"Full" (whole day) or "Afternoon" (half day, starting in the afternoon). Only meaningful for holidays.</summary>

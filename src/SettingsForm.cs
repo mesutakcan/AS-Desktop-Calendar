@@ -911,6 +911,7 @@ internal sealed class SettingsForm : Form
         Day = e.Day,
         Month = e.Month is >= 1 and <= 12 ? TurkishMonths[e.Month - 1] : TurkishMonths[0],
         Year = e.Year?.ToString(CultureInfo.InvariantCulture) ?? "",
+        CompletedYear = e.CompletedYear,
         Label = e.Label,
         Portion = e.Portion == "Afternoon" ? PortionDisplayValues[1] : PortionDisplayValues[0],
     };
@@ -951,7 +952,7 @@ internal sealed class SettingsForm : Form
         }
 
         string portion = r.Portion == PortionDisplayValues[1] ? "Afternoon" : "Full";
-        entry = new DateEntry { Day = r.Day, Month = month, Year = year, Label = r.Label?.Trim() ?? "", Portion = portion };
+        entry = new DateEntry { Day = r.Day, Month = month, Year = year, CompletedYear = r.CompletedYear, Label = r.Label?.Trim() ?? "", Portion = portion };
         return true;
     }
 
@@ -961,6 +962,7 @@ internal sealed class SettingsForm : Form
         public int Day { get; set; } = DateTime.Now.Day;
         public string Month { get; set; } = TurkishMonths[DateTime.Now.Month - 1];
         public string Year { get; set; } = "";
+        public int? CompletedYear { get; set; }
         public string Label { get; set; } = "";
         public string Portion { get; set; } = PortionDisplayValues[0];
 
@@ -1066,6 +1068,11 @@ internal sealed class SettingsForm : Form
                     Day = newDate.Day,
                     Month = TurkishMonths[newDate.Month - 1],
                     Year = _chkRepeatYear.Checked ? "" : newDate.Year.ToString(CultureInfo.InvariantCulture),
+                    CompletedYear = newDate.Day == row.Day
+                        && newDate.Month == Array.IndexOf(TurkishMonths, row.Month) + 1
+                        && string.Equals(_chkRepeatYear.Checked ? "" : newDate.Year.ToString(CultureInfo.InvariantCulture), row.Year, StringComparison.Ordinal)
+                            ? row.CompletedYear
+                            : null,
                     Label = _txtLabel.Text.Trim(),
                     Portion = _chkAfternoon.Checked ? PortionDisplayValues[1] : PortionDisplayValues[0],
                 };

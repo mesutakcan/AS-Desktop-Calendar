@@ -121,17 +121,17 @@ internal sealed class TrayApplicationContext : ApplicationContext
         }
     }
 
-    private void CheckAndNotifyReminders(IReadOnlyList<DateEntry> reminders)
+    private void CheckAndNotifyReminders(List<DateEntry> reminders)
     {
         var now = DateTime.Today;
         var todayMatches = reminders
-            .Where(r => IsReminderForDate(r, now))
+            .Where(r => !IsCompletedForOccurrence(r, now) && IsReminderForDate(r, now))
             .OrderBy(r => r.Month)
             .ThenBy(r => r.Day)
             .ToList();
 
         var missedMatches = reminders
-            .Where(r => IsMissedReminder(r, now))
+            .Where(r => !IsCompletedForOccurrence(r, now) && IsMissedReminder(r, now))
             .OrderByDescending(r => r.Year ?? now.Year)
             .ThenBy(r => r.Month)
             .ThenBy(r => r.Day)
@@ -140,9 +140,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
         if (todayMatches.Count == 0 && missedMatches.Count == 0)
             return;
 
-        var form = new ReminderNotificationForm(todayMatches, missedMatches);
+        var form = new ReminderNotificationForm(todayMatches, missedMatches, reminders, _remindersFile);
         form.Show();
     }
+
+    private static bool IsCompletedForOccurrence(DateEntry reminder, DateTime date)
+        => reminder.CompletedYear == (reminder.Year ?? date.Year);
 
     private static bool IsReminderForDate(DateEntry reminder, DateTime date)
     {
@@ -174,8 +177,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private sealed class ReminderNotificationForm : Form
     {
-        public ReminderNotificationForm(IReadOnlyList<DateEntry> todayMatches, IReadOnlyList<DateEntry> missedMatches)
+        private readonly string _remindersFile;
+        private readonly List<DateEntry> _reminders;
+        private readonly List<ListView> _lists = new();
+        private readonly Button _deleteButton = new() { Text = "Sil", AutoSize = true, MinimumSize = new Size(90, 32), Enabled = false };
+        private readonly Button _completeButton = new() { Text = "Tamamlandı", AutoSize = true, MinimumSize = new Size(110, 32), Enabled = false };
+        private bool _syncingSelection;
+
+        public ReminderNotificationForm(IReadOnlyList<DateEntry> todayMatches, IReadOnlyList<DateEntry> missedMatches,
+            List<DateEntry> reminders, string remindersFile)
         {
+            _reminders = reminders;
+            _remindersFile = remindersFile;
+
             Text = "Desktop Calendar - Hatırlatıcılar";
             StartPosition = FormStartPosition.CenterScreen;
             Size = new Size(560, 420);
@@ -232,14 +246,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
             closeButton.Click += (_, _) => Close();
             var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
             buttonPanel.Controls.Add(closeButton);
+            buttonPanel.Controls.Add(_completeButton);
+            buttonPanel.Controls.Add(_deleteButton);
             root.Controls.Add(buttonPanel, 0, 2);
+
+            _completeButton.Click += (_, _) => CompleteSelectedReminder();
+            _deleteButton.Click += (_, _) => DeleteSelectedReminder();
 
             Controls.Add(root);
             AcceptButton = closeButton;
             CancelButton = closeButton;
         }
 
-        private static Control CreateReminderSection(string title, IReadOnlyList<DateEntry> items)
+        private Control CreateReminderSection(string title, IReadOnlyList<DateEntry> items)
         {
             var section = new GroupBox
             {
@@ -264,6 +283,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
             list.Columns.Add("Tarih", 150);
             list.Columns.Add("Açıklama", -2);
+            list.SelectedIndexChanged += (_, _) => OnSelectionChanged(list);
             foreach (var item in items)
             {
                 var row = new ListViewItem(new[]
@@ -271,13 +291,108 @@ internal sealed class TrayApplicationContext : ApplicationContext
                     FormatDateForDisplay(item),
                     FormatReminderLabel(item),
                 });
+                row.Tag = item;
                 row.BackColor = IsReminderForDate(item, DateTime.Today) ? Color.White : Color.FromArgb(250, 250, 250);
                 list.Items.Add(row);
             }
 
+            _lists.Add(list);
             section.Controls.Add(list);
             section.Height = list.Height + 34;
             return section;
+        }
+
+        private void OnSelectionChanged(ListView source)
+        {
+            if (_syncingSelection)
+                return;
+
+            _syncingSelection = true;
+            try
+            {
+                if (source.SelectedItems.Count > 0)
+                {
+                    foreach (var list in _lists)
+                    {
+                        if (list != source)
+                            list.SelectedItems.Clear();
+                    }
+                }
+            }
+            finally
+            {
+                _syncingSelection = false;
+            }
+
+            bool hasSelection = _lists.Any(list => list.SelectedItems.Count > 0);
+            _deleteButton.Enabled = hasSelection;
+            _completeButton.Enabled = hasSelection;
+        }
+
+        private ListView? GetSelectedList() => _lists.FirstOrDefault(list => list.SelectedItems.Count > 0);
+
+        private void CompleteSelectedReminder()
+        {
+            var list = GetSelectedList();
+            if (list is null || list.SelectedItems[0].Tag is not DateEntry reminder)
+                return;
+
+            int? previousCompletedYear = reminder.CompletedYear;
+            reminder.CompletedYear = reminder.Year ?? DateTime.Today.Year;
+            try
+            {
+                DateEntryStore.Save(_remindersFile, _reminders);
+            }
+            catch (Exception ex)
+            {
+                reminder.CompletedYear = previousCompletedYear;
+                MessageBox.Show(this, "Hatırlatıcı durumu kaydedilemedi: " + ex.Message,
+                    "Kayıt Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            list.SelectedItems[0].Remove();
+            OnSelectionChanged(list);
+            CloseIfNoRemindersRemain();
+        }
+
+        private void DeleteSelectedReminder()
+        {
+            var list = GetSelectedList();
+            if (list is null || list.SelectedItems[0].Tag is not DateEntry reminder)
+                return;
+
+            string label = FormatReminderLabel(reminder);
+            if (MessageBox.Show(this, $"'{label}' hatırlatıcısı kalıcı olarak silinsin mi?",
+                    "Hatırlatıcıyı sil", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
+
+            int index = _reminders.IndexOf(reminder);
+            if (index < 0)
+                return;
+
+            _reminders.RemoveAt(index);
+            try
+            {
+                DateEntryStore.Save(_remindersFile, _reminders);
+            }
+            catch (Exception ex)
+            {
+                _reminders.Insert(index, reminder);
+                MessageBox.Show(this, "Hatırlatıcı silinemedi: " + ex.Message,
+                    "Kayıt Hatası", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            list.SelectedItems[0].Remove();
+            OnSelectionChanged(list);
+            CloseIfNoRemindersRemain();
+        }
+
+        private void CloseIfNoRemindersRemain()
+        {
+            if (_lists.All(list => list.Items.Count == 0))
+                Close();
         }
 
         private static string FormatDateForDisplay(DateEntry item)
